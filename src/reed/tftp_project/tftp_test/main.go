@@ -6,9 +6,12 @@ import "os"
 import "strconv"
 
 func main() {
+
 	aa := os.Args[1:]
 	aa = aa
 	var serv *tftp.Server = nil
+
+	//if we have first arg, parse it and try and use it as port. if fail return
 	if len(aa) == 1 {
 		port, err := strconv.Atoi(aa[0])
 		if err != nil {
@@ -22,7 +25,7 @@ func main() {
 			return
 		}
 		serv = serv2
-	} else {
+	} else { //else just use a random port
 		serv = tftp.CreateServerRandPort()
 	}
 

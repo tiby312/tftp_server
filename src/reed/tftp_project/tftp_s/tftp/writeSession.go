@@ -86,10 +86,6 @@ func (s *writeSessions) HandleDataPacket(dpaddr *tn.Dpaddr) (*fi.File, error) {
 		if eq(element.useraddr, dpaddr.Remoteaddr) {
 			file, err := element.addBlock(dpaddr.Dp)
 
-			// if file != nil {
-			// 	copy(s.wr[i:], s.wr[i+1:])
-			// 	s.wr = s.wr[:len(s.wr)-1]
-			// }
 			return file, err
 		}
 	}

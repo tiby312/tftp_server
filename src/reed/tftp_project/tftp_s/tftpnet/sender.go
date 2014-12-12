@@ -16,8 +16,8 @@ const (
 
 const (
 	WINDOW_SIZE   = 10 //how many blocks do you want to sender before waiting for acks
-	BLOCK_TIMEOUT = 2  //in seconds. when to try resend
-	DALLY_TIME    = 10 //in seconds.
+	BLOCK_TIMEOUT = 2  //in seconds. when to try resend a block to a client
+	DALLY_TIME    = 10 //in seconds. how long to stick around after receiving a file
 )
 
 type error_code int
@@ -37,13 +37,13 @@ const (
 type Sender struct {
 	conn      *net.UDPConn
 	localaddr *net.UDPAddr
-	buf       []byte
+	buf       []byte      //once buffer is used to read in all udp packets
 	outbox    chan *Tftpp //private to disallow anyone but sender reading
 }
 
 //when receiving packages
-//every tftp packet is first parse as one of these
-//to send a packet, must put into this form first
+//every tftp packet is first parsed as one of these.
+//To send a packet, must put into this form first
 type Tftpp struct {
 	Opcode     uint16
 	Payload    []byte //with opcode
@@ -53,6 +53,8 @@ type Tftpp struct {
 func (s *Sender) GetPort() int {
 	return s.localaddr.Port
 }
+
+//private constructor
 func createSender(con *net.UDPConn, addr *net.UDPAddr) Sender {
 	return Sender{
 		outbox:    make(chan *Tftpp, 10),
@@ -74,6 +76,8 @@ func CreateSender(port int) (Sender, bool) {
 		return createSender(conn2, &addr), true
 	}
 }
+
+//run this as a go routine.
 func (s *Sender) Run() {
 	for {
 		o := <-s.outbox
@@ -88,11 +92,12 @@ func (s *Sender) Run() {
 	}
 }
 
+//push a message to send asynchronously onto outbox
 func (s *Sender) Send(t *Tftpp) {
 	s.outbox <- t
 }
 
-// should be somewhere else
+//TODO should be somewhere else
 func (s *Sender) Get_next_tftpp() (*Tftpp, error) {
 	rlen, addr, err := s.conn.ReadFromUDP(s.buf)
 	if err != nil {
@@ -106,6 +111,7 @@ func (s *Sender) Get_next_tftpp() (*Tftpp, error) {
 	return &pp, err
 }
 
+//starts at port 1000 and incrementally looks for an open port
 func FindPort() (conn *net.UDPConn, addr *net.UDPAddr) {
 	c := 1000
 	for {

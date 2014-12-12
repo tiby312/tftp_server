@@ -1,13 +1,18 @@
 package tftpnet
 
+/*
+Has low level code for parsing blocks.
+
+Note: in this package, blocknums start at 1.
+Outside of this package, blocknums start at 0.
+So to the rest of the code, its as if they started from zero.
+But when they are send through the protocol, they start at 1.
+*/
+
 import "encoding/binary"
 import "strings"
 import "errors"
 import "net"
-
-// func GetOffBlockNum(num uint) {
-// 	return num + 1
-// }
 
 func ParseAsData(tftpp *Tftpp) *Dpaddr {
 	num := uint16(binary.BigEndian.Uint16(tftpp.Payload[2:4]))

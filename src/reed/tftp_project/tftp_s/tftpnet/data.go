@@ -3,6 +3,9 @@ package tftpnet
 import "net"
 import "fmt"
 
+/*
+tftp packets that contain data are parsed into these data structures
+*/
 type Datapacket struct {
 	Data     []byte
 	Blocknum uint16
