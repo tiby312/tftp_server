@@ -82,6 +82,8 @@ func (f *Files) GetNumBlocks(name string) (int, error) {
 	return file.numBlocks(), nil
 
 }
+
+//for debugging
 func (f *Files) WriteToDisk(name string) {
 	file := f.get(name)
 	if file == nil {
@@ -106,24 +108,6 @@ func (f *Files) WriteToDisk(name string) {
 	if _, err := w.Write(file.Data); err != nil {
 		panic(err)
 	}
-
-	// // make a buffer to keep chunks that are read
-	// buf := make([]byte, 1024)
-	// for {
-	// 	// read a chunk
-	// 	n, err := r.Read(buf)
-	// 	if err != nil && err != io.EOF {
-	// 		panic(err)
-	// 	}
-	// 	if n == 0 {
-	// 		break
-	// 	}
-
-	// 	// write a chunk
-	// 	if _, err := w.Write(buf[:n]); err != nil {
-	// 		panic(err)
-	// 	}
-	// }
 
 	if err = w.Flush(); err != nil {
 		panic(err)
