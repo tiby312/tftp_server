@@ -36,6 +36,8 @@ Main:
 	for {
 	Inner:
 		for numStarted < tn.WINDOW_SIZE {
+			fmt.Printf("blocks:%v\n", s.blocks)
+			fmt.Printf("num started=%v\n", numStarted)
 			bnum, ok := s.findBlockNotStarted()
 			if !ok {
 				//maybe have none started, but not all finished
@@ -50,9 +52,8 @@ Main:
 				numStarted++
 			}
 		}
-		fmt.Printf("blocks:%v\n", s.blocks)
-		fmt.Printf("num started=%v\n", numStarted)
-		fmt.Printf("waiting\n")
+
+		//fmt.Printf("waiting\n")
 		select {
 		//TODO add a shutdown chan case
 		case block := <-s.newblock:
