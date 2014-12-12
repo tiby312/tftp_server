@@ -77,9 +77,11 @@ func CreateSender(port int) (Sender, bool) {
 func (s *Sender) Run() {
 	for {
 		o := <-s.outbox
+
 		_, err := s.conn.WriteToUDP(o.Payload, o.Remoteaddr)
 		if err != nil {
 			fmt.Println(err)
+			fmt.Printf("payload size:%v\n", len(o.Payload))
 			//panic(err)
 		}
 		fmt.Println("success sent")

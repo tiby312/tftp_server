@@ -155,7 +155,7 @@ func (w *writeSession) addBlock(datap tn.Datapacket) (*fi.File, error) {
 	}
 
 	if w.finished() {
-		ss := (w.lastBlock.index+1)*tn.BLOCK_SIZE - (tn.BLOCK_SIZE - w.lastBlock.size)
+		var ss int64 = (int64(w.lastBlock.index)+1)*tn.BLOCK_SIZE - (tn.BLOCK_SIZE - int64(w.lastBlock.size))
 		file := fi.File{Data: make([]byte, ss), Name: w.filename}
 		copy(file.Data, w.workdata[0:ss])
 		return &file, nil

@@ -8,6 +8,12 @@ Run Instructions:
 	1) Run with no arguments to pick a random port
 	2) Run with first argument being the port number to listen of that port
 
+Rudimentary Test Instructions:
+	in test folder:
+		
+		command: sh.test_tftp.sh (portnum) (filename)
+		This script using atftp client
+		it will write the specified to the server and then read it back to a different file.
 
 Notes:
 	Ran out of time to fully test. 

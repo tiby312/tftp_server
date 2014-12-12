@@ -114,12 +114,7 @@ func (s *readSession) sendBlock(b uint16) {
 	}
 	s.sender.Send(tn.ComposeData(b, mm, s.useraddr))
 }
-func min(a int, b int) int {
-	if a < b {
-		return a
-	}
-	return b
-}
+
 func (s *readSession) finished() bool {
 	for i := 0; i < len(s.blocks); i++ {
 		if s.blocks[i] != 2 {

@@ -21,27 +21,36 @@ func CreateFileSys() Files {
 	return f
 }
 
-func (file *File) numBlocks() uint16 {
-	vv := len(file.Data) / tn.BLOCK_SIZE
+func (file *File) numBlocks() int {
+	var vv int = len(file.Data) / tn.BLOCK_SIZE
 	if vv < len(file.Data) {
 		vv += 1
 	}
-	return uint16(vv)
+	return vv
 }
-
+func min(a int, b int) int {
+	if a < b {
+		return a
+	}
+	return b
+}
 func (f *File) getBlock(b uint16) ([]byte, error) {
-	if b >= f.numBlocks() {
+	if int(b) >= f.numBlocks() {
 		return nil, errors.New("block index not in file")
 	}
-	bs := b * tn.BLOCK_SIZE
-	be := len(f.Data)
+	bs := int(b) * tn.BLOCK_SIZE
+	be := min(bs+tn.BLOCK_SIZE, len(f.Data)) //len(f.Data)
 	return f.Data[bs:be], nil
 }
 
 func (f *Files) String() string {
 	var buffer bytes.Buffer
 	for i := 0; i < len(f.files); i++ {
-		buffer.WriteString(fmt.Sprintf("%s,", f.files[i].Name))
+		buffer.WriteString(fmt.Sprintf(
+			"%s:%v,%v",
+			f.files[i].Name,
+			f.files[i].numBlocks(),
+			len(f.files[i].Data)))
 	}
 	return buffer.String()
 }
@@ -59,7 +68,7 @@ func (f *Files) Add(file *File) error {
 	return nil
 
 }
-func (f *Files) GetNumBlocks(name string) (uint16, error) {
+func (f *Files) GetNumBlocks(name string) (int, error) {
 	f.lock.Lock()
 	defer f.lock.Unlock()
 
