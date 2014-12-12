@@ -50,9 +50,29 @@ type Tftpp struct {
 	Remoteaddr *net.UDPAddr
 }
 
-func CreateSender() Sender {
+func (s *Sender) GetPort() int {
+	return s.localaddr.Port
+}
+func createSender(con *net.UDPConn, addr *net.UDPAddr) Sender {
+	return Sender{
+		outbox:    make(chan *Tftpp, 10),
+		conn:      con,
+		localaddr: addr,
+		buf:       make([]byte, 1024)} //todo check if this buffer is right size
+}
+func CreateSenderRandPort() Sender {
 	con, add := FindPort()
-	return Sender{outbox: make(chan *Tftpp, 10), conn: con, localaddr: add, buf: make([]byte, 1024)} //todo check if this buffer is right size
+	return createSender(con, add)
+}
+func CreateSender(port int) (Sender, bool) {
+	addr := net.UDPAddr{Port: port, IP: net.ParseIP("localhost")}
+	conn2, err := net.ListenUDP("udp", &addr)
+
+	if err != nil {
+		return Sender{}, false
+	} else {
+		return createSender(conn2, &addr), true
+	}
 }
 func (s *Sender) Run() {
 	for {

@@ -13,15 +13,28 @@ type Server struct {
 	Finished  chan int
 }
 
-func CreateServer() *Server {
+func CreateServer(port int) (*Server, bool) {
+	sender, ok := tn.CreateSender(port)
+	if !ok {
+		return nil, false
+	}
 	s := Server{
-		sender:   tn.CreateSender(),
+		sender:   sender,
+		Finished: make(chan int),
+		files:    fi.CreateFileSys()}
+	return &s, true
+}
+func CreateServerRandPort() *Server {
+	s := Server{
+		sender:   tn.CreateSenderRandPort(),
 		Finished: make(chan int),
 		files:    fi.CreateFileSys()}
 	return &s
 }
+
 func (s *Server) Run() {
 	go s.sender.Run()
+	fmt.Printf("Listening on port:%v\n", s.sender.GetPort())
 	for {
 		tftpp, err := s.sender.Get_next_tftpp()
 		if err != nil {

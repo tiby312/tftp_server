@@ -6,4 +6,8 @@ Build Instructions:
 	1)set GOPATH to this directory
 	2)run build.sh
 
+Run Instructions:
+	1) Run with no arguments to pick a random port
+	2) Run with first argument being the port number to listen of that port
+
 simple TFTP server
