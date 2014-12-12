@@ -3,13 +3,9 @@ package tftpnet
 import "net"
 import "fmt"
 
-//use custom type to remind to
-//start counting from one and not zero
-type Blockindex uint16
-
 type Datapacket struct {
 	Data     []byte
-	Blocknum Blockindex
+	Blocknum uint16
 }
 
 type Dpaddr struct {

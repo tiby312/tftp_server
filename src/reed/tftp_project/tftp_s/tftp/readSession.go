@@ -34,20 +34,29 @@ func (s *readSession) run() {
 	numStarted := 0
 Main:
 	for {
-		fmt.Println("loop")
+	Inner:
 		for numStarted < tn.WINDOW_SIZE {
-			bnum, fin := s.findBlockNotStarted()
-			if fin {
-				fmt.Println("FINISHED SENDING")
-				break Main
+			bnum, ok := s.findBlockNotStarted()
+			if !ok {
+				//maybe have none started, but not all finished
+				if s.checkFinished() {
+					fmt.Println("FINISHED SENDING")
+					break Main
+				}
+				break Inner //imported. without can lead to infinite loop
+			} else {
+				s.sendBlock(bnum)
+				s.blocks[bnum] = 1
+				numStarted++
 			}
-			s.sendBlock(bnum)
-			s.blocks[bnum] = 1
-			numStarted++
 		}
-		fmt.Println("waiting for acks")
+		fmt.Printf("blocks:%v\n", s.blocks)
+		fmt.Printf("num started=%v\n", numStarted)
+		fmt.Printf("waiting\n")
 		select {
+		//TODO add a shutdown chan case
 		case block := <-s.newblock:
+			fmt.Printf("newb\n")
 			if s.blocks[block] == 1 {
 				fmt.Println("RECEIVED ACK FOR BLOCK:", block)
 				s.blocks[block] = 2
@@ -56,8 +65,8 @@ Main:
 				fmt.Println("received ack for block not requested. ignoring")
 			}
 		case timeoutblock := <-s.timeout:
-			fmt.Println("TIMED OUT")
 			if s.blocks[timeoutblock] == 1 {
+				fmt.Printf("timed out block:%v", timeoutblock)
 				numStarted--
 				s.blocks[timeoutblock] = 0 //set back to zero so loop can select again
 			} else if s.blocks[timeoutblock] == 2 {
@@ -70,13 +79,22 @@ Main:
 	}
 }
 func (s *readSession) findBlockNotStarted() (uint16, bool) {
-	for i := uint16(0); i < uint16(len(s.blocks)); i++ {
+	for i := 0; i < len(s.blocks); i++ {
 		if s.blocks[i] == 0 {
-			return i, false
+			return uint16(i), true
 		}
 	}
-	return 0, true
+	return 0, false
 }
+func (s *readSession) checkFinished() bool {
+	for i := uint16(0); i < uint16(len(s.blocks)); i++ {
+		if s.blocks[i] != 2 {
+			return false
+		}
+	}
+	return true
+}
+
 func (s *readSession) sendBlock(b uint16) {
 
 	fu := func() {
@@ -93,9 +111,7 @@ func (s *readSession) sendBlock(b uint16) {
 		//todo handle
 		panic(err)
 	}
-	//fmt.Println("sending block ii:%v  (%v,%v)", b, bs, be)
-	bb := tn.Blockindex(b + 1)
-	s.sender.Send(tn.ComposeData(bb, mm, s.useraddr))
+	s.sender.Send(tn.ComposeData(b, mm, s.useraddr))
 }
 func min(a int, b int) int {
 	if a < b {
@@ -112,20 +128,20 @@ func (s *readSession) finished() bool {
 	return true
 }
 
-func (s *readSessions) handleAck(bind tn.Blockindex, addr *net.UDPAddr) error {
+func (s *readSessions) handleAck(num uint16, addr *net.UDPAddr) error {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 	reads := s.findReadSession(addr)
 	if reads == nil {
 		fmt.Println(errors.New("got an ack we don't need"))
 	}
-	num := uint16(bind) - 1
 	if num >= uint16(len(reads.blocks)) {
 		panic(errors.New("block index out of bounds"))
 	}
 
 	fmt.Println("pushing ack onto chan")
 	reads.newblock <- num
+	fmt.Println("pushed ack onto chan")
 	return nil
 }
 func (s *readSessions) findReadSession(addr *net.UDPAddr) *readSession {

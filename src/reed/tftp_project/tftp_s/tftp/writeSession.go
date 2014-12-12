@@ -97,7 +97,7 @@ func (s *writeSessions) HandleDataPacket(dpaddr *tn.Dpaddr) (*fi.File, error) {
 }
 
 type DupBlockErr struct {
-	bnum tn.Blockindex
+	bnum uint16
 }
 
 func (d *DupBlockErr) Error() string {

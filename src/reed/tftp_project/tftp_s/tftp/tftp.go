@@ -63,8 +63,8 @@ func (s *Server) handlePacket(tftpp *tn.Tftpp) {
 		fmt.Println("starting new read session")
 		s.rsessions.StartNewReadSessionAndRun(tftpp.Remoteaddr, filename, &s.files, &s.sender)
 	case tn.OPCODE_ACK:
-		fmt.Printf("in:ACK")
 		blocknum := tn.ParseAck(tftpp)
+		fmt.Printf("in:ACK %v\n", blocknum)
 		s.rsessions.handleAck(blocknum, tftpp.Remoteaddr)
 	case tn.OPCODE_WRQ: //wrq
 		filename, mode, err := tn.ParseAsWRQorRRQ(tftpp)
