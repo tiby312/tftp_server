@@ -11,9 +11,9 @@ Run Instructions:
 Rudimentary Test Instructions:
 	in test folder:
 		
-		command: sh.test_tftp.sh (portnum) (filename)
+		command: sh.test_tftp.sh (portnum)
 		This script using atftp client
-		it will write the specified to the server and then read it back to a different file.
+		it will write the test picture to the server and then read it back to a different file.
 
 Notes:
 	Not fully tested yet. Did not yet write code to elegantly shutdown.
