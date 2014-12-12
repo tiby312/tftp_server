@@ -108,11 +108,11 @@ func (d *DupBlockErr) Error() string {
 func (w *writeSession) addBlock(datap tn.Datapacket) (*fi.File, error) {
 
 	//blocknum but counting from zero
-	bnz := datap.Blocknum
+	bnz := int(datap.Blocknum)
 
 	//if we have encountered a blockindex larger than what we can fit already
 	//make sure we grow to fit it
-	if bnz >= uint16(len(w.blocks)) {
+	if bnz >= len(w.blocks) {
 
 		//grow block by factor of 2
 		nbs := (bnz + 1) * 2
@@ -146,7 +146,7 @@ func (w *writeSession) addBlock(datap tn.Datapacket) (*fi.File, error) {
 		if w.lastBlock != nil {
 			panic(errors.New("received two blocks less than fixed block length"))
 		}
-		lb := lastBlockD{index: bnz, size: uint16(len(datap.Data))}
+		lb := lastBlockD{index: uint16(bnz), size: uint16(len(datap.Data))}
 		w.lastBlock = &lb
 
 		fmt.Printf("found last block %v\n", *(w.lastBlock))

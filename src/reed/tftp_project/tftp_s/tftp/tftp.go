@@ -106,6 +106,9 @@ func (s *Server) handlePacket(tftpp *tn.Tftpp) {
 				panic(err)
 			}
 
+			//for debuging
+			//s.files.WriteToDisk(file.Name)
+
 			//close wsession after dally time
 			//this timer should really be set every time
 			//we receive a tftp packet from client.
