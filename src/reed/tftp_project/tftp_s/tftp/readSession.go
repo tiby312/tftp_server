@@ -41,8 +41,6 @@ Main:
 	for {
 	Inner:
 		for numStarted < tn.WINDOW_SIZE {
-			//fmt.Printf("blocks:%v\n", s.blocks)
-			//fmt.Printf("num started=%v\n", numStarted)
 			bnum, ok := s.findBlockNotStarted()
 			if !ok {
 				//maybe have none started, but not all finished
@@ -50,17 +48,15 @@ Main:
 					fmt.Println("FINISHED SENDING")
 					break Main
 				}
-				break Inner //imported. without can lead to infinite loop
+				break Inner //important. without can lead to infinite loop
 			} else {
 				s.sendBlock(bnum)
 				s.blocks[bnum] = 1
 				numStarted++
 			}
 		}
-
-		//fmt.Printf("waiting\n")
 		select {
-		//TODO add a shutdown chan case
+		//TODO add a shutdown chan case for fast shutdown
 		case block := <-s.newblock:
 			fmt.Printf("newb\n")
 			if s.blocks[block] == 1 {
@@ -154,7 +150,8 @@ func (s *readSessions) findReadSession(addr *net.UDPAddr) *readSession {
 	return nil
 }
 
-//multiple people are allowed to read same file
+//TODO multiple people should allowed to read same file
+
 func (s *readSessions) StartNewReadSessionAndRun(addr *net.UDPAddr, filename string, filesys *fi.Files, sender *tn.Sender) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
