@@ -60,7 +60,7 @@ Main:
 		case block := <-s.newblock:
 			fmt.Printf("newb\n")
 			if s.blocks[block] == 1 {
-				fmt.Println("RECEIVED ACK FOR BLOCK:", block)
+				//fmt.Println("RECEIVED ACK FOR BLOCK:", block)
 				s.blocks[block] = 2
 				numStarted--
 			} else {

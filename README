@@ -16,5 +16,5 @@ Rudimentary Test Instructions:
 		it will write the test picture to the server and then read it back to a different file.
 
 Notes:
-	Not fully tested. Esp. did not test packetloss. Did not write code to elegantly shutdown.
+	Not fully tested. Esp. did not test packetloss. Did not write code to elegantly shutdown. Will continue to improve.
 
