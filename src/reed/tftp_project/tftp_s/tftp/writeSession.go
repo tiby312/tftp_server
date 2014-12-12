@@ -1,5 +1,7 @@
 package tftp
 
+//this maybe should be in its own package
+
 import "net"
 import "fmt"
 import "errors"
