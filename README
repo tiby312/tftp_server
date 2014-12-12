@@ -16,5 +16,5 @@ Rudimentary Test Instructions:
 		it will write the specified to the server and then read it back to a different file.
 
 Notes:
-	Ran out of time to fully test. 
+	Not fully tested yet. Did not yet write code to elegantly shutdown.
 
