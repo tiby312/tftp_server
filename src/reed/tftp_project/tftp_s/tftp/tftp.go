@@ -60,6 +60,7 @@ func (s *Server) handlePacket(tftpp *tn.Tftpp) {
 			s.sender.Send(tn.ComposeError(tn.ERR_FILE_NOT_FOUND, "could not find file"+filename, tftpp.Remoteaddr))
 			return
 		}
+
 		fmt.Println("starting new read session")
 		s.rsessions.StartNewReadSessionAndRun(tftpp.Remoteaddr, filename, &s.files, &s.sender)
 	case tn.OPCODE_ACK:
@@ -83,7 +84,7 @@ func (s *Server) handlePacket(tftpp *tn.Tftpp) {
 			fmt.Printf("already in middle of being written by someone. ignoring")
 			return
 		}
-		s.sender.Send(tn.ComposeDataAck(tftpp.Remoteaddr, 0))
+		s.sender.Send(tn.ComposeFirstDataAck(tftpp.Remoteaddr))
 	case tn.OPCODE_DATA: //data
 		dpaddr := tn.ParseAsData(tftpp)
 		fmt.Printf("in:data:%v\n", dpaddr.String())
@@ -96,6 +97,7 @@ func (s *Server) handlePacket(tftpp *tn.Tftpp) {
 			fmt.Println(err)
 			return
 		}
+		//fmt.Printf("%s\n", s.wsessions.String())
 		s.sender.Send(tn.ComposeDataAck(tftpp.Remoteaddr, dpaddr.Dp.Blocknum))
 		if file != nil {
 			err := s.files.Add(file)

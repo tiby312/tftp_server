@@ -108,7 +108,7 @@ func (d *DupBlockErr) Error() string {
 func (w *writeSession) addBlock(datap tn.Datapacket) (*fi.File, error) {
 
 	//blocknum but counting from zero
-	bnz := uint16(datap.Blocknum - 1)
+	bnz := datap.Blocknum
 
 	//if we have encountered a blockindex larger than what we can fit already
 	//make sure we grow to fit it
@@ -140,7 +140,7 @@ func (w *writeSession) addBlock(datap tn.Datapacket) (*fi.File, error) {
 
 	if len(datap.Data) == 0 {
 		//this could be allowed
-		panic(errors.New("length of data is zero. did user try to uploade an empty file?"))
+		//panic(errors.New("length of data is zero. did user try to uploade an empty file?"))
 	}
 	if len(datap.Data) < tn.BLOCK_SIZE {
 		if w.lastBlock != nil {
@@ -153,9 +153,13 @@ func (w *writeSession) addBlock(datap tn.Datapacket) (*fi.File, error) {
 	}
 
 	if w.finished() {
-		var ss int64 = (int64(w.lastBlock.index)+1)*tn.BLOCK_SIZE - (tn.BLOCK_SIZE - int64(w.lastBlock.size))
-		file := fi.File{Data: make([]byte, ss), Name: w.filename}
-		copy(file.Data, w.workdata[0:ss])
+		numblocks := int(w.lastBlock.index) + 1
+		sizeofrest := (numblocks - 1) * tn.BLOCK_SIZE
+		sizeoflast := int(w.lastBlock.size)
+		totalsize := sizeofrest + sizeoflast
+		//var ss int64 = (int64(w.lastBlock.index)+1)*tn.BLOCK_SIZE - (tn.BLOCK_SIZE - int64(w.lastBlock.size))
+		file := fi.File{Data: make([]byte, totalsize), Name: w.filename}
+		copy(file.Data, w.workdata[0:totalsize])
 		return &file, nil
 	} else {
 		return nil, nil

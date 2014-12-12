@@ -34,12 +34,15 @@ type readSessions struct {
 
 func (s *readSession) run() {
 	numStarted := 0
+
+	//TODO should send this but causing problems
+	//s.sender.Send(tn.ComposeFirstData(s.useraddr))
 Main:
 	for {
 	Inner:
 		for numStarted < tn.WINDOW_SIZE {
-			fmt.Printf("blocks:%v\n", s.blocks)
-			fmt.Printf("num started=%v\n", numStarted)
+			//fmt.Printf("blocks:%v\n", s.blocks)
+			//fmt.Printf("num started=%v\n", numStarted)
 			bnum, ok := s.findBlockNotStarted()
 			if !ok {
 				//maybe have none started, but not all finished
@@ -170,6 +173,5 @@ func (s *readSessions) StartNewReadSessionAndRun(addr *net.UDPAddr, filename str
 		timeout:  make(chan uint16)}
 
 	s.rr = append(s.rr, r)
-	fmt.Println("about to run reas sess")
 	go r.run()
 }

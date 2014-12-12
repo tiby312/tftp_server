@@ -15,8 +15,7 @@ import "errors"
 import "net"
 
 func ParseAsData(tftpp *Tftpp) *Dpaddr {
-	num := uint16(binary.BigEndian.Uint16(tftpp.Payload[2:4]))
-	num -= 1
+	num := uint16(binary.BigEndian.Uint16(tftpp.Payload[2:4])) - 1
 	dp := Datapacket{Blocknum: num, Data: tftpp.Payload[4:len(tftpp.Payload)]}
 	dpaddr := Dpaddr{Dp: dp, Remoteaddr: tftpp.Remoteaddr}
 	return &dpaddr
@@ -27,6 +26,14 @@ func ComposeData(bind uint16, data []byte, addr *net.UDPAddr) *Tftpp {
 	binary.BigEndian.PutUint16(bb, OPCODE_DATA)
 	binary.BigEndian.PutUint16(bb[2:4], bind+1)
 	copy(bb[4:], data)
+	a := Tftpp{Opcode: OPCODE_ACK, Payload: bb, Remoteaddr: addr}
+	return &a
+}
+func ComposeFirstData(addr *net.UDPAddr) *Tftpp {
+	//a := tftpp{}
+	bb := make([]byte, 4)
+	binary.BigEndian.PutUint16(bb, OPCODE_DATA)
+	binary.BigEndian.PutUint16(bb[2:4], 0)
 	a := Tftpp{Opcode: OPCODE_ACK, Payload: bb, Remoteaddr: addr}
 	return &a
 }
@@ -69,9 +76,16 @@ func ComposeError(code error_code, str string, addr *net.UDPAddr) *Tftpp {
 	return &vv
 }
 func ParseAck(tftpp *Tftpp) uint16 {
-	num := uint16(binary.BigEndian.Uint16(tftpp.Payload[2:4]))
-	num -= 1 //sinceoffset
+	num := uint16(binary.BigEndian.Uint16(tftpp.Payload[2:4])) - 1
 	return num
+}
+func ComposeFirstDataAck(addr *net.UDPAddr) *Tftpp {
+	bb := make([]byte, 4)
+	//PutUint16([]byte, uint16)
+	binary.BigEndian.PutUint16(bb, OPCODE_ACK)
+	binary.BigEndian.PutUint16(bb[2:4], 0)
+	vv := Tftpp{Opcode: OPCODE_ACK, Payload: bb, Remoteaddr: addr}
+	return &vv
 }
 func ComposeDataAck(addr *net.UDPAddr, blocknum uint16) *Tftpp {
 	bb := make([]byte, 4)
