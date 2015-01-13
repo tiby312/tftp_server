@@ -39,6 +39,7 @@ type Sender struct {
 	localaddr *net.UDPAddr
 	buf       []byte      //once buffer is used to read in all udp packets
 	outbox    chan *Tftpp //private to disallow anyone but sender reading
+	shutdown chan int
 }
 
 //when receiving packages
@@ -60,7 +61,8 @@ func createSender(con *net.UDPConn, addr *net.UDPAddr) Sender {
 		outbox:    make(chan *Tftpp, 10),
 		conn:      con,
 		localaddr: addr,
-		buf:       make([]byte, 1024)} //todo check if this buffer is right size
+		buf:       make([]byte, 1024),
+		shutdown: make(chan int)} //todo check if this buffer is right size
 }
 func CreateSenderRandPort() Sender {
 	con, add := FindPort()
@@ -79,19 +81,26 @@ func CreateSender(port int) (Sender, bool) {
 
 //run this as a go routine.
 func (s *Sender) Run() {
-	for {
-		o := <-s.outbox
-
-		_, err := s.conn.WriteToUDP(o.Payload, o.Remoteaddr)
-		if err != nil {
-			fmt.Println(err)
-			fmt.Printf("payload size:%v\n", len(o.Payload))
-			//panic(err)
-		}
-		fmt.Println("success sent")
+	Main:for {
+		select{
+			case <-s.shutdown:
+				break Main
+			case o := <-s.outbox:
+				_, err := s.conn.WriteToUDP(o.Payload, o.Remoteaddr)
+				if err != nil {
+					fmt.Println(err)
+					fmt.Printf("payload size:%v\n", len(o.Payload))
+					//panic(err)
+				}
+				fmt.Println("success sent")
+		}		
 	}
+	fmt.Println("success shutdown sender")
 }
 
+func (s *Sender) Stop(){
+	s.shutdown<-1
+}
 //push a message to send asynchronously onto outbox
 func (s *Sender) Send(t *Tftpp) {
 	s.outbox <- t

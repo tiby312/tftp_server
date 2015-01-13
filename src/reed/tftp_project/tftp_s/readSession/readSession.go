@@ -1,9 +1,8 @@
-package tftp
+package readSession
 
 //this maybe should be in its own package
 
 import "net"
-import "sync"
 import "time"
 import "errors"
 import "fmt"
@@ -27,12 +26,8 @@ type readSession struct {
 	timeout  chan uint16
 }
 
-type readSessions struct {
-	rr   []*readSession
-	lock sync.Mutex
-}
 
-func (s *readSession) run() {
+func (s *readSession) run(par *ReadSessions) {
 	numStarted := 0
 
 	//TODO should send this but causing problems
@@ -76,7 +71,12 @@ Main:
 			} else {
 				panic(errors.New("timed out on a block not started. should not happen"))
 			}
+		case <-par.shutdown:
+			fmt.Println("shutting down read session")
+			par.shutdownok<-1
+			break Main
 		}
+
 
 	}
 }
@@ -123,52 +123,4 @@ func (s *readSession) finished() bool {
 		}
 	}
 	return true
-}
-
-func (s *readSessions) handleAck(num uint16, addr *net.UDPAddr) error {
-	s.lock.Lock()
-	defer s.lock.Unlock()
-	reads := s.findReadSession(addr)
-	if reads == nil {
-		fmt.Println(errors.New("got an ack we don't need"))
-	}
-	if num >= uint16(len(reads.blocks)) {
-		panic(errors.New("block index out of bounds"))
-	}
-
-	fmt.Println("pushing ack onto chan")
-	reads.newblock <- num
-	fmt.Println("pushed ack onto chan")
-	return nil
-}
-func (s *readSessions) findReadSession(addr *net.UDPAddr) *readSession {
-	for i := 0; i < len(s.rr); i++ {
-		if eq(s.rr[i].useraddr, addr) {
-			return s.rr[i]
-		}
-	}
-	return nil
-}
-
-//TODO multiple people should allowed to read same file
-
-func (s *readSessions) StartNewReadSessionAndRun(addr *net.UDPAddr, filename string, filesys *fi.Files, sender *tn.Sender) {
-	s.lock.Lock()
-	defer s.lock.Unlock()
-
-	numb, err := filesys.GetNumBlocks(filename)
-	if err != nil {
-		panic(err)
-	}
-	r := &readSession{
-		sender:   sender,
-		useraddr: addr,
-		filesys:  filesys,
-		filename: filename,
-		blocks:   make([]uint8, numb),
-		newblock: make(chan uint16),
-		timeout:  make(chan uint16)}
-
-	s.rr = append(s.rr, r)
-	go r.run()
 }

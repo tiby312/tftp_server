@@ -3,6 +3,15 @@ package tftpnet
 import "net"
 import "fmt"
 
+
+
+//check if two addresses are the same. not sure if this is the correct way to show equality
+func Eq(a *net.UDPAddr, b *net.UDPAddr) bool {
+	return a.String() == b.String()
+}
+
+
+
 /*
 tftp packets that contain data are parsed into these data structures
 */

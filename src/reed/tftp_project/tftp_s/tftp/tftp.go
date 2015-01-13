@@ -1,16 +1,18 @@
 package tftp
 
 import "fmt"
+import rs "reed/tftp_project/tftp_s/readSession"
+import ws "reed/tftp_project/tftp_s/writeSession"
 import tn "reed/tftp_project/tftp_s/tftpnet"
 import fi "reed/tftp_project/tftp_s/file"
 import "time"
 
 type Server struct {
-	wsessions writeSessions
-	rsessions readSessions
+	wsessions ws.WriteSessions
+	rsessions rs.ReadSessions
 	files     fi.Files
 	sender    tn.Sender
-	Finished  chan int
+	Finished  chan int	
 }
 
 func CreateServer(port int) (*Server, bool) {
@@ -19,9 +21,11 @@ func CreateServer(port int) (*Server, bool) {
 		return nil, false
 	}
 	s := Server{
+		rsessions: rs.Create(),
 		sender:   sender,
 		Finished: make(chan int),
-		files:    fi.CreateFileSys()}
+		files:    fi.CreateFileSys(),
+	}
 	return &s, true
 }
 func CreateServerRandPort() *Server {
@@ -35,14 +39,26 @@ func CreateServerRandPort() *Server {
 func (s *Server) Run() {
 	go s.sender.Run()
 	fmt.Printf("Listening on port:%v\n", s.sender.GetPort())
-	for {
-		tftpp, err := s.sender.Get_next_tftpp()
-		if err != nil {
-			fmt.Printf("failed to parse")
-			continue
+	Loop:for {
+		select{
+		case <-s.Finished:
+			fmt.Println("finished!");
+			break Loop;
+		default:
+			tftpp, err := s.sender.Get_next_tftpp()
+			if err != nil {
+				fmt.Printf("failed to parse")
+				continue
+			}
+			go s.handlePacket(tftpp)
 		}
-		go s.handlePacket(tftpp)
+		
 	}
+}
+func (s *Server) Stop(){
+	s.rsessions.Stop();
+	s.sender.Stop();
+	s.Finished<-1
 }
 
 func (s *Server) handlePacket(tftpp *tn.Tftpp) {
@@ -66,7 +82,7 @@ func (s *Server) handlePacket(tftpp *tn.Tftpp) {
 	case tn.OPCODE_ACK:
 		blocknum := tn.ParseAck(tftpp)
 		fmt.Printf("in:ACK %v\n", blocknum)
-		s.rsessions.handleAck(blocknum, tftpp.Remoteaddr)
+		s.rsessions.HandleAck(blocknum, tftpp.Remoteaddr)
 	case tn.OPCODE_WRQ: //wrq
 		filename, mode, err := tn.ParseAsWRQorRRQ(tftpp)
 		//todo make sure mode is octet
@@ -91,8 +107,8 @@ func (s *Server) handlePacket(tftpp *tn.Tftpp) {
 		file, err := s.wsessions.HandleDataPacket(dpaddr)
 		if err != nil {
 			switch t := err.(type) {
-			case *DupBlockErr:
-				s.sender.Send(tn.ComposeDataAck(tftpp.Remoteaddr, t.bnum))
+			case *ws.DupBlockErr:
+				s.sender.Send(tn.ComposeDataAck(tftpp.Remoteaddr, t.Bnum))
 			}
 			fmt.Println(err)
 			return

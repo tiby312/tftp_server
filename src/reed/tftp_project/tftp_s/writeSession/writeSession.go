@@ -1,11 +1,10 @@
-package tftp
+package writeSession
 
 //this maybe should be in its own package
 
 import "net"
 import "fmt"
 import "errors"
-import "sync"
 import tn "reed/tftp_project/tftp_s/tftpnet"
 import fi "reed/tftp_project/tftp_s/file"
 
@@ -24,78 +23,15 @@ type writeSession struct {
 	lastBlock *lastBlockD //is null if we havent found the last block yet
 }
 
-//no two writeSessions will have same filename
-//can use filename to identify writeSessions
-type writeSessions struct {
-	wr   []writeSession
-	lock sync.Mutex
-}
 
 //for debuging
 func (b writeSession) String() string {
 	return fmt.Sprintf("%v , %v", b.blocks, b.lastBlock)
 }
 
-func (b writeSessions) String() string {
-	return fmt.Sprintf("%v", b.wr)
-}
-
-func (s *writeSessions) StartNewWriteSession(addr *net.UDPAddr, name string) error {
-	s.lock.Lock()
-	defer s.lock.Unlock()
-	w := writeSession{useraddr: addr, filename: name, blocks: make([]bool, 0), lastBlock: nil, workdata: make([]byte, 0)}
-
-	//todo make sure something
-	for i := 0; i < len(s.wr); i++ {
-		element := &s.wr[i]
-		if eq(element.useraddr, w.useraddr) {
-			return errors.New("user is already writing something")
-		}
-	}
-
-	s.wr = append(s.wr, w)
-	return nil
-}
-func (s *writeSessions) CloseWriteSession(addr *net.UDPAddr) error {
-	s.lock.Lock()
-	defer s.lock.Unlock()
-	fmt.Println("Closing write session!")
-	for i := 0; i < len(s.wr); i++ {
-		element := &s.wr[i]
-		if eq(element.useraddr, addr) {
-			copy(s.wr[i:], s.wr[i+1:])
-			s.wr = s.wr[:len(s.wr)-1]
-			return nil
-		}
-	}
-	return errors.New("cannot delete. write session not found")
-}
-
-//check if two addresses are the same. not sure if this is the correct way to show equality
-func eq(a *net.UDPAddr, b *net.UDPAddr) bool {
-	return a.String() == b.String()
-}
-
-//takes in a datapacket and adds it to the correct write session
-//returns the finished file if that was the last packet we needed
-//returns nil file if wasnt last
-func (s *writeSessions) HandleDataPacket(dpaddr *tn.Dpaddr) (*fi.File, error) {
-	s.lock.Lock()
-	defer s.lock.Unlock()
-
-	for i := 0; i < len(s.wr); i++ {
-		element := &s.wr[i]
-		if eq(element.useraddr, dpaddr.Remoteaddr) {
-			file, err := element.addBlock(dpaddr.Dp)
-
-			return file, err
-		}
-	}
-	return nil, errors.New("no addr")
-}
 
 type DupBlockErr struct {
-	bnum uint16
+	Bnum uint16
 }
 
 func (d *DupBlockErr) Error() string {
@@ -130,7 +66,7 @@ func (w *writeSession) addBlock(datap tn.Datapacket) (*fi.File, error) {
 
 	if w.blocks[bnz] {
 		//already have this block reset ack
-		return nil, &DupBlockErr{bnum: datap.Blocknum}
+		return nil, &DupBlockErr{Bnum: datap.Blocknum}
 	}
 
 	w.blocks[bnz] = true
